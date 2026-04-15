@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="hu">
 <head>
     <meta charset="UTF-8">
@@ -976,7 +976,7 @@
                         <input type="number" id="metsir-tg" step="0.1" min="0" class="metsir-input w-full p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="Pl: 1.6">
                     </div>
                     <div class="field">
-                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">BMI (kg/mÂ˛)</label>
+                        <label class="block text-sm font-bold text-gray-700 mb-2 uppercase tracking-wide">BMI (kg/m²)</label>
                         <input type="number" id="metsir-bmi" step="0.1" min="10" class="metsir-input w-full p-3 bg-gray-50 border rounded-lg outline-none focus:ring-2 focus:ring-purple-500" placeholder="Pl: 27.4">
                     </div>
                 </div>
@@ -2115,6 +2115,7 @@
                 html += `<div class="text-green-700 font-bold text-lg">Alacsonyabb kockázat</div>
                          <div class="text-green-600 text-sm mt-1">Sepsis gyanúja esetén továbbra is szoros obszerváció javasolt.</div>`;
             }
+            html += renderGaugeFromConfig(gaugePresets.qsofa, score, `${score} pont`);
             resultDiv.innerHTML = html;
         });
 
@@ -2134,6 +2135,7 @@
                     resultDiv.className = "mt-8 p-6 bg-green-50 rounded-xl border-2 border-green-200 text-center";
                     html += `<div class="text-green-700 font-bold text-lg">SIRS Negatív</div>`;
                 }
+                html += renderGaugeFromConfig(gaugePresets.sirs, score, `${score}/4`);
                 resultDiv.innerHTML = html;
             });
         });
@@ -2191,6 +2193,7 @@
             if (total > 0) {
                 interpEl.innerHTML += `<div class="text-sm font-normal mt-2 opacity-75">Becsült kórházi mortalitás: ${mort}</div>`;
             }
+            upsertGaugeSlot(boxEl, 'sofaGauge', renderGaugeFromConfig(gaugePresets.sofa, total, `${total} pont`), 'mt-5');
 
             if (hasTygValues) {
                 if (glu <= 0 || tg <= 0) {
@@ -2213,6 +2216,7 @@
                         <div class="text-4xl font-black ${tygClass}">${tyg.toFixed(2)}</div>
                         <div class="text-sm mt-1 font-medium ${tygClass}">${tygLabel} inzulinrezisztencia-kockázat</div>
                         <div class="text-xs text-gray-500 mt-3">A TyG a triglicerid-glükóz index, magasabb érték kedvezőtlenebb.</div>
+                    ${renderTyGGauge(tyg)}
                     `;
                 }
             }
@@ -2264,18 +2268,22 @@
                 return;
             }
 
+            const fulfilledCriteria = (isSepsis ? 1 : 0) + (needsVaso ? 1 : 0) + (lactate > 2 ? 1 : 0);
+
             if (isSepsis && needsVaso && lactate > 2) {
                 resultDiv.className = "mt-8 p-6 bg-red-100 rounded-xl border-2 border-red-500 text-center";
                 resultDiv.innerHTML = `
                     <div class="text-red-700 font-bold text-2xl mb-2">SZEPTIKUS SOKK IGAZOLT</div>
                     <div class="text-red-600 font-medium">Kórházi mortalitás > 40%</div>
                     <div class="text-red-500 text-sm mt-2 italic">A kritériumok (Sepsis + Vasopressor + Laktát > 2 mmol/L) teljesülnek.</div>
+                    ${renderGaugeFromConfig(gaugePresets.shock, fulfilledCriteria, `${fulfilledCriteria}/3`)}
                 `;
             } else {
                 resultDiv.className = "mt-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-200 text-center";
                 resultDiv.innerHTML = `
                     <div class="text-blue-700 font-bold text-lg">Szeptikus sokk nem igazolható</div>
                     <div class="text-blue-600 text-sm mt-1">A Sepsis-3 definíció szerinti összes kritérium (Sepsis + Vasopressor igény + Laktát > 2) egyidejű jelenléte szükséges.</div>
+                    ${renderGaugeFromConfig(gaugePresets.shock, fulfilledCriteria, `${fulfilledCriteria}/3`)}
                 `;
             }
         }
@@ -2379,6 +2387,7 @@
                 interpEl.textContent = "STABIL ÁLLAPOT";
                 adviceEl.textContent = "Rutin monitorozás.";
             }
+            upsertGaugeSlot(boxEl, 'newsGauge', renderGaugeFromConfig(gaugePresets.news, score, `${score} pont`), 'mt-5');
         }
 
         document.querySelectorAll('.news-input').forEach(el => {
@@ -2430,6 +2439,7 @@
                 surv1El.textContent = "45%";
                 surv2El.textContent = "35%";
             }
+            upsertGaugeSlot(boxEl, 'childPughGauge', renderGaugeFromConfig(gaugePresets.childPugh, score, `${score} pont`), 'mt-5');
         }
 
         document.querySelectorAll('.cp-input').forEach(el => {
@@ -2468,7 +2478,7 @@
                 color = "text-orange-600";
             }
 
-            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${fib4.toFixed(2)}</div><div class="text-sm font-medium mt-1">${interp}</div>`;
+            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${fib4.toFixed(2)}</div><div class="text-sm font-medium mt-1">${interp}</div>${renderGaugeFromConfig(gaugePresets.fib4, fib4, fib4.toFixed(2))}`;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-cyan-100 text-center";
         }
         document.querySelectorAll('.fib4-input').forEach(el => el.addEventListener('input', calculateFIB4));
@@ -2497,7 +2507,7 @@
                 color = "text-orange-600";
             }
 
-            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${apri.toFixed(2)}</div><div class="text-sm font-medium mt-1">${interp}</div>`;
+            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${apri.toFixed(2)}</div><div class="text-sm font-medium mt-1">${interp}</div>${renderGaugeFromConfig(gaugePresets.apri, apri, apri.toFixed(2))}`;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-teal-100 text-center";
         }
         document.querySelectorAll('.apri-input').forEach(el => el.addEventListener('input', calculateAPRI));
@@ -2525,7 +2535,7 @@
             else if (nafldi <= 50) grade = "Grade III";
             else grade = "Grade IV";
 
-            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${nafldi.toFixed(2)}</div><div class="text-sm font-medium mt-1">Stádium: ${grade}</div><div class="text-xs text-gray-400 mt-1">BMI: ${bmi.toFixed(1)}</div>`;
+            resDiv.innerHTML = `<div class="text-3xl font-bold ${color}">${nafldi.toFixed(2)}</div><div class="text-sm font-medium mt-1">Stádium: ${grade}</div><div class="text-xs text-gray-400 mt-1">BMI: ${bmi.toFixed(1)}</div>${renderGaugeFromConfig(gaugePresets.nafldi, nafldi, nafldi.toFixed(2))}`;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-violet-100 text-center";
         }
         document.querySelectorAll('.na-input').forEach(el => el.addEventListener('input', calculateNAFLDI));
@@ -2558,7 +2568,7 @@
             else if (finalMeld <= 39) mort = "52.6%";
             else mort = "71.3%";
 
-            resDiv.innerHTML = `<div class="text-3xl font-bold text-rose-600">${finalMeld}</div><div class="text-sm font-medium mt-1">3 hónapos becsült mortalitás: ${mort}</div>`;
+            resDiv.innerHTML = `<div class="text-3xl font-bold text-rose-600">${finalMeld}</div><div class="text-sm font-medium mt-1">3 hónapos becsült mortalitás: ${mort}</div>${renderGaugeFromConfig(gaugePresets.meld, finalMeld, `${finalMeld}`)}`;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-rose-100 text-center";
         }
         document.querySelectorAll('.meld-input').forEach(el => el.addEventListener('input', calculateMELD));
@@ -2612,6 +2622,7 @@
                 <div class="text-4xl font-black ${color}">${finalEgfr} <span class="text-sm font-normal text-gray-400">ml/min/1.73m²</span></div>
                 <div class="mt-2 font-bold text-lg ${color}">${stage} stádium</div>
                 <div class="text-sm text-gray-600">${desc}</div>
+                ${renderGaugeFromConfig(gaugePresets.egfr, finalEgfr, `${finalEgfr}`)}
             `;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-lime-100 text-center";
         }
@@ -2649,6 +2660,7 @@
                     <div class="text-xs mt-1">Mortalitás: 15-57%. Sürgős kórházi felvétel, intenzív osztály mérlegelendő.</div>
                 `;
             }
+            upsertGaugeSlot(boxEl, 'curbGauge', renderGaugeFromConfig(gaugePresets.curb65, checked, `${checked} pont`), 'mt-5');
         }
         document.querySelectorAll('.curb-input').forEach(el => el.addEventListener('change', calculateCURB65));
 
@@ -2702,6 +2714,7 @@
                 <div class="text-sm text-gray-600 mt-2">CDAI pontszám</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${note}</div>
                 <div class="text-xs text-gray-400 mt-3">Kategóriák: &lt;150 remisszió, 150-219 enyhe-közepes, 220-450 közepes-súlyos, &gt;450 súlyos.</div>
+                ${renderGaugeFromConfig(gaugePresets.cdai, score, score.toFixed(1))}
             `;
         }
         document.querySelectorAll('.cd-input').forEach(el => {
@@ -2751,6 +2764,7 @@
                 <div class="text-sm text-gray-600 mt-2">Partial Mayo: ${partial} / 9</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${note}</div>
                 <div class="text-xs text-gray-400 mt-3">Orientáció: 0-2 remisszió, 3-5 enyhe, 6-10 közepes, 11-12 súlyos.</div>
+                ${renderGaugeFromConfig(gaugePresets.mayo, total, `${total}/12`)}
             `;
         }
         document.querySelectorAll('.cu-input').forEach(el => {
@@ -2802,6 +2816,7 @@
                 <div class="text-sm text-gray-600 mt-2">CHA2DS2-VASc</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${advice}</div>
                 <div class="text-xs text-gray-400 mt-3">Életkor-pontok: 65-74 év = 1, ≥75 év = 2.</div>
+                ${renderGaugeFromConfig(gaugePresets.cha2, score, `${score} pont`)}
             `;
         }
         document.querySelectorAll('.cha2-input').forEach(el => {
@@ -2848,6 +2863,7 @@
                 <div class="text-sm text-gray-600 mt-2">HAS-BLED</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${advice}</div>
                 <div class="text-xs text-gray-400 mt-3">Interpretáció: 0-1 alacsony, 2 köztes, ≥3 magas vérzéskockázat.</div>
+                ${renderGaugeFromConfig(gaugePresets.hasbled, score, `${score} pont`)}
             `;
         }
         document.querySelectorAll('.hasbled-input').forEach(el => {
@@ -2891,6 +2907,7 @@
                 <div class="text-sm text-gray-600 mt-2">HEART score</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${advice}</div>
                 <div class="text-xs text-gray-400 mt-3">0-3 alacsony, 4-6 köztes, 7-10 magas kockázat.</div>
+                ${renderGaugeFromConfig(gaugePresets.heart, score, `${score} pont`)}
             `;
         }
         document.querySelectorAll('.heart-input').forEach(el => {
@@ -2972,6 +2989,7 @@
                 <div class="text-sm text-gray-600 mt-2">GRACE score</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${advice}</div>
                 <div class="text-xs text-gray-400 mt-3">Irányadó sávok: &lt;109 alacsony, 109-140 köztes, &gt;140 magas.</div>
+                ${renderGaugeFromConfig(gaugePresets.grace, score, `${score.toFixed(0)} pont`)}
             `;
         }
         document.querySelectorAll('.grace-input').forEach(el => {
@@ -3013,6 +3031,7 @@
                 <div class="text-sm text-gray-600 mt-2">TIMI risk score</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">Becsült eseményráta: ${eventRate}</div>
                 <div class="text-xs text-gray-400 mt-3">0-1: 4.7%, 2: 8.3%, 3: 13.2%, 4: 19.9%, 5: 26.2%, 6-7: 40.9%.</div>
+                ${renderGaugeFromConfig(gaugePresets.timi, checked, `${checked} pont`)}
             `;
         }
         document.querySelectorAll('.timi-input').forEach(el => {
@@ -3063,6 +3082,7 @@
                 <div class="text-4xl font-black ${color}">${bmi.toFixed(1)}</div>
                 <div class="mt-2 text-2xl font-bold ${color}">${category}</div>
                 <div class="text-sm text-gray-600 mt-2">BMI kg/m²</div>
+                ${renderGaugeFromConfig(gaugePresets.bmi, bmi, bmi.toFixed(1))}
             `;
         }
         document.querySelectorAll('.bmi-input').forEach(el => {
@@ -3081,6 +3101,35 @@
             const inches = heightCm / 2.54;
             const extraInches = Math.max(0, inches - 60);
             const ibw = (sex === 'female' ? 45.5 : 50) + (2.3 * extraInches);
+            const ibwGauge = createRiskGauge({
+                value: ibw,
+                min: Math.max(30, ibw * 0.6),
+                max: ibw * 1.4,
+                rangeLabel: 'Referencia súlytartomány',
+                valueLabel: `${ibw.toFixed(1)} kg`,
+                badgeClass: 'text-green-700',
+                normalRange: { from: ibw * 0.9, to: ibw * 1.1 },
+                normalBandClass: 'bg-emerald-200/80',
+                normalLabelClass: 'text-emerald-700',
+                normalLabel: 'Céltartomány',
+                segments: [
+                    { from: Math.max(30, ibw * 0.6), to: ibw * 0.9, color: 'bg-sky-400' },
+                    { from: ibw * 0.9, to: ibw * 1.1, color: 'bg-emerald-500' },
+                    { from: ibw * 1.1, to: ibw * 1.4, color: 'bg-amber-400' }
+                ],
+                labels: [
+                    { value: Math.max(30, ibw * 0.6), text: Math.round(Math.max(30, ibw * 0.6)).toString() },
+                    { value: ibw * 0.9, text: Math.round(ibw * 0.9).toString() },
+                    { value: ibw, text: Math.round(ibw).toString() },
+                    { value: ibw * 1.1, text: Math.round(ibw * 1.1).toString() },
+                    { value: ibw * 1.4, text: Math.round(ibw * 1.4).toString() }
+                ],
+                legend: [
+                    { dot: 'bg-sky-400', text: 'Alacsonyabb referencia' },
+                    { dot: 'bg-emerald-500', text: 'Ideális célzóna' },
+                    { dot: 'bg-amber-400', text: 'Magasabb referencia' }
+                ]
+            });
 
             resDiv.className = 'mt-8 p-6 bg-green-50 rounded-xl border-2 border-green-200 text-center';
             resDiv.innerHTML = `
@@ -3088,6 +3137,7 @@
                 <div class="mt-2 text-2xl font-bold text-green-800">Ideális testsúly</div>
                 <div class="text-sm text-gray-600 mt-2">Devine formula</div>
                 <div class="text-xs text-gray-500 mt-3">Becslés a klinikai céltestsúlyhoz; gyógyszeradagolásnál és ventilációs számításoknál lehet hasznos.</div>
+                ${ibwGauge}
             `;
         }
         document.querySelectorAll('.ibw-input').forEach(el => {
@@ -3135,6 +3185,7 @@
                 <div class="mt-2 text-2xl font-bold ${color}">${category}</div>
                 <div class="text-sm text-gray-600 mt-2">Body Roundness Index</div>
                 <div class="text-xs text-gray-500 mt-3">Minél magasabb az érték, annál kedvezőtlenebb a centrális zsíreloszlás becslése.</div>
+                ${renderGaugeFromConfig(gaugePresets.bri, bri, bri.toFixed(2))}
             `;
         }
         document.querySelectorAll('.bri-input').forEach(el => {
@@ -3194,6 +3245,7 @@
                 <div class="text-sm text-gray-600 mt-2">SAFE score</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">Globulin: ${globulin.toFixed(1)} g/dL</div>
                 <div class="text-xs text-gray-400 mt-3">${note} Model based on published SAFE coefficients.</div>
+                ${renderGaugeFromConfig(gaugePresets.safe, safeScore, `${safeScore.toFixed(0)}`)}
             `;
         }
         document.querySelectorAll('.safe-input').forEach(el => {
@@ -3237,6 +3289,7 @@
                 <div class="mt-2 text-2xl font-bold ${color}">${risk}</div>
                 <div class="text-sm text-gray-600 mt-2">ABCD2 score</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${note}</div>
+                ${renderGaugeFromConfig(gaugePresets.stroke, score, `${score} pont`)}
             `;
         }
         document.querySelectorAll('.stroke-input').forEach(el => {
@@ -3320,6 +3373,7 @@
                 <div class="text-sm text-gray-600 mt-2">Becsült 30 napos mortalitás: ${mortality}</div>
                 <div class="text-sm font-medium text-gray-700 mt-1">${site}</div>
                 <div class="text-xs text-gray-400 mt-3">Class I: életkor ≤ 50 év és nincs további kockázati tényező.</div>
+                ${renderGaugeFromConfig(gaugePresets.psi, score, `${score} pont`)}
             `;
         }
         document.querySelectorAll('.psi-input').forEach(el => {
@@ -3352,11 +3406,13 @@
                     <div class="text-xs text-gray-500 font-bold uppercase">HOMA-IR</div>
                     <div class="text-3xl font-black ${homaColor}">${homa.toFixed(2)}</div>
                     <div class="text-xs mt-1 font-medium">${homa > 2.5 ? "Fennálló IR" : (homa > 2.0 ? "Határérték" : "Normál")}</div>
+                    ${renderGaugeFromConfig(gaugePresets.homa, homa, homa.toFixed(2))}
                 </div>
                 <div class="p-4 bg-white rounded-xl border-2 border-orange-100 text-center">
                     <div class="text-xs text-gray-500 font-bold uppercase">QUICKI</div>
                     <div class="text-3xl font-black ${quickiColor}">${quicki.toFixed(3)}</div>
                     <div class="text-xs mt-1 font-medium">${quicki < 0.34 ? "Csökkent érzékenység" : "Normál tartomány"}</div>
+                    ${renderGaugeFromConfig(gaugePresets.quicki, quicki, quicki.toFixed(3))}
                 </div>
                 <div class="md:col-span-2 p-4 rounded-xl bg-orange-50 border border-orange-100 text-xs text-orange-800">
                     ${insulinNote}
@@ -3416,22 +3472,26 @@
                     let overallText = "A jelenlegi értékek összképe kedvező.";
                     let overallColor = "text-green-700";
                     let overallBg = "bg-green-50 border-green-200";
+                    let overallGaugeValue = 0;
 
                     if (ldlMg >= 190 || tgMg >= 500) {
                         overallTitle = "Nagyon magas kockázat";
                         overallText = "Sürgős orvosi értékelés javasolt, különösen kiemelkedően magas LDL vagy triglicerid esetén.";
                         overallColor = "text-red-700";
                         overallBg = "bg-red-50 border-red-200";
+                        overallGaugeValue = 3;
                     } else if (ldlMg >= 160 || tgMg >= 200 || hdlLow) {
                         overallTitle = "Emelkedett kockázat";
                         overallText = "A profil atherogén irányba tolódik, életmódbeli és klinikai kontroll mérlegelendő.";
                         overallColor = "text-orange-700";
                         overallBg = "bg-orange-50 border-orange-200";
+                        overallGaugeValue = 2;
                     } else if (ldlMg >= 130 || tgMg >= 150) {
                         overallTitle = "Határérték közeli";
                         overallText = "A lipidértékek egy része már határérték közelében van.";
                         overallColor = "text-amber-700";
                         overallBg = "bg-amber-50 border-amber-200";
+                        overallGaugeValue = 1;
                     }
 
                     const hdlRangeText = sex === "male" ? "Férfi: <40 alacsony, ≥60 kedvező" : "Nő: <50 alacsony, ≥60 kedvező";
@@ -3458,6 +3518,7 @@
                             </div>
                         </div>
                         <div class="text-xs text-gray-500 mt-3">${hdlRangeText}</div>
+                        ${renderGaugeFromConfig(gaugePresets.lipidOverall, overallGaugeValue, `${overallGaugeValue}/3`)}
                     `;
                 }
             }
@@ -3484,6 +3545,7 @@
                         <div class="text-4xl font-black ${metsirClass}">${metsir.toFixed(2)}</div>
                         <div class="text-sm mt-1 font-medium ${metsirClass}">${metsirLabel} inzulinrezisztencia-kockázat</div>
                         <div class="text-xs text-gray-500 mt-3">Főleg összehasonlító értékelésre hasznos: minél magasabb, annál kedvezőtlenebb az anyagcsere-profil.</div>
+                    ${renderMetsIrGauge(metsir)}
                     `;
                 }
             }
@@ -3509,6 +3571,7 @@
                         <div class="text-4xl font-black ${tygClass}">${tyg.toFixed(2)}</div>
                         <div class="text-sm mt-1 font-medium ${tygClass}">${tygLabel} inzulinrezisztencia-kockázat</div>
                         <div class="text-xs text-gray-500 mt-3">A TyG a triglicerid-glükóz index, magasabb érték kedvezőtlenebb.</div>
+                    ${renderTyGGauge(tyg)}
                     `;
                 }
             }
@@ -3721,6 +3784,7 @@
                     <div class="text-4xl font-black ${metsirClass}">${metsir.toFixed(2)}</div>
                     <div class="text-sm mt-1 font-medium ${metsirClass}">${metsirLabel} inzulinrezisztencia-kockázat</div>
                     <div class="text-xs text-gray-500 mt-3">Főleg összehasonlító értékelésre hasznos: minél magasabb, annál kedvezőtlenebb az anyagcsere-profil.</div>
+                    ${renderMetsIrGauge(metsir)}
                 `;
             }
 
@@ -3747,10 +3811,394 @@
                     <div class="text-4xl font-black ${tygClass}">${tyg.toFixed(2)}</div>
                     <div class="text-sm mt-1 font-medium ${tygClass}">${tygLabel} inzulinrezisztencia-kockázat</div>
                     <div class="text-xs text-gray-500 mt-3">A TyG a triglicerid-glükóz index, magasabb érték kedvezőtlenebb.</div>
+                    ${renderTyGGauge(tyg)}
                 `;
             }
         }
+                function clampGaugePercent(value, min, max) {
+            if (max <= min) return 0;
+            return Math.min(100, Math.max(0, ((value - min) / (max - min)) * 100));
+        }
 
+        function createRiskGauge(config) {
+            const percent = clampGaugePercent(config.value, config.min, config.max);
+            const markerStyle = 'left: calc(' + percent + '% - 1px);';
+            const badgeStyle = 'left: clamp(0%, calc(' + percent + '% - 44px), calc(100% - 88px));';
+            const hasNormalRange = !!(config.normalRange && typeof config.normalRange.from === 'number' && typeof config.normalRange.to === 'number');
+            const normalStart = hasNormalRange ? clampGaugePercent(config.normalRange.from, config.min, config.max) : 0;
+            const normalEnd = hasNormalRange ? clampGaugePercent(config.normalRange.to, config.min, config.max) : 0;
+            const normalWidth = hasNormalRange ? Math.max(0, normalEnd - normalStart) : 0;
+            const normalBandStyle = 'left:' + normalStart + '%; width:' + normalWidth + '%;';
+            const normalLabelStyle = 'left: clamp(0%, calc(' + (normalStart + (normalWidth / 2)) + '% - 60px), calc(100% - 120px));';
+            const segmentsHtml = config.segments.map(segment => {
+                const width = ((segment.to - segment.from) / (config.max - config.min)) * 100;
+                return '<div class="' + segment.color + '" style="width:' + width + '%"></div>';
+            }).join('');
+            const labelsHtml = config.labels.map(label => {
+                const labelPercent = clampGaugePercent(label.value, config.min, config.max);
+                return '<div class="absolute top-0 -translate-x-1/2 text-[10px] font-semibold text-slate-500" style="left:' + labelPercent + '%">' + label.text + '</div>';
+            }).join('');
+            const legendHtml = config.legend.map(item => {
+                return '<span class="inline-flex items-center gap-2 rounded-full bg-white px-2.5 py-1 ring-1 ring-slate-200"><span class="h-2.5 w-2.5 rounded-full ' + item.dot + '"></span>' + item.text + '</span>';
+            }).join('');
+            const normalRangeHtml = hasNormalRange
+                ? '<div class="absolute -top-5 h-7 rounded-full border border-white/80 ' + (config.normalBandClass || 'bg-emerald-200/80') + '" style="' + normalBandStyle + '"></div>' +
+                  '<div class="absolute -top-9 rounded-full border border-white/80 bg-white/95 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.16em] shadow-sm ' + (config.normalLabelClass || 'text-emerald-700') + '" style="' + normalLabelStyle + '">' + (config.normalLabel || 'Normál tartomány') + '</div>'
+                : '';
+
+            return '' +
+                '<div class="mt-5 rounded-2xl bg-slate-50/90 px-4 py-4 text-left">' +
+                    '<div class="flex items-center justify-between gap-3 text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">' +
+                        '<span>Elhelyezkedés a tartományban</span>' +
+                        '<span>' + config.rangeLabel + '</span>' +
+                    '</div>' +
+                    '<div class="relative mt-8">' +
+                        normalRangeHtml +
+                        '<div class="absolute -top-7 rounded-full border border-white/80 bg-white px-3 py-1 text-xs font-bold shadow-sm ' + config.badgeClass + '" style="' + badgeStyle + '">' +
+                            config.valueLabel +
+                        '</div>' +
+                        '<div class="absolute -top-1 h-9 w-0.5 bg-slate-900/70 shadow" style="' + markerStyle + '"></div>' +
+                        '<div class="flex h-3 overflow-hidden rounded-full shadow-inner ring-1 ring-slate-200/80">' +
+                            segmentsHtml +
+                        '</div>' +
+                        '<div class="relative mt-3 h-4">' +
+                            labelsHtml +
+                        '</div>' +
+                    '</div>' +
+                    '<div class="mt-3 flex flex-wrap gap-2 text-[11px] text-slate-600">' +
+                        legendHtml +
+                    '</div>' +
+                '</div>';
+        }
+
+        function renderMetsIrGauge(value) {
+            return createRiskGauge({
+                value,
+                min: 20,
+                max: 60,
+                rangeLabel: '20-60',
+                valueLabel: value.toFixed(2),
+                badgeClass: 'text-purple-700',
+                normalRange: { from: 20, to: 30 },
+                normalBandClass: 'bg-emerald-200/80',
+                normalLabelClass: 'text-emerald-700',
+                segments: [
+                    { from: 20, to: 30, color: 'bg-emerald-500' },
+                    { from: 30, to: 40, color: 'bg-amber-400' },
+                    { from: 40, to: 50, color: 'bg-orange-500' },
+                    { from: 50, to: 60, color: 'bg-red-500' }
+                ],
+                labels: [
+                    { value: 20, text: '20' },
+                    { value: 30, text: '30' },
+                    { value: 40, text: '40' },
+                    { value: 50, text: '50' },
+                    { value: 60, text: '60' }
+                ],
+                legend: [
+                    { dot: 'bg-emerald-500', text: 'Normális / alacsonyabb: < 30' },
+                    { dot: 'bg-amber-400', text: 'Köztes: 30-39.9' },
+                    { dot: 'bg-orange-500', text: 'Emelkedett: 40-49.9' },
+                    { dot: 'bg-red-500', text: 'Magas: >= 50' }
+                ]
+            });
+        }
+
+        function renderGaugeFromConfig(config, value, valueLabel) {
+            return createRiskGauge({
+                ...config,
+                value,
+                valueLabel: valueLabel || (typeof value === 'number' ? value.toFixed(1) : String(value))
+            });
+        }
+
+        function upsertGaugeSlot(containerEl, slotId, gaugeHtml, extraClass) {
+            if (!containerEl) return;
+            let slot = document.getElementById(slotId);
+            if (!slot) {
+                slot = document.createElement('div');
+                slot.id = slotId;
+                containerEl.appendChild(slot);
+            }
+            slot.className = extraClass || 'w-full';
+            slot.innerHTML = gaugeHtml;
+        }
+
+        const gaugePresets = {
+            qsofa: {
+                min: 0, max: 3, rangeLabel: '0-3', badgeClass: 'text-blue-700',
+                normalRange: { from: 0, to: 1 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 3, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsonyabb: 0-1' }, { dot: 'bg-red-500', text: 'Magas: ≥ 2' }]
+            },
+            sirs: {
+                min: 0, max: 4, rangeLabel: '0-4', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 1.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 4, color: 'bg-orange-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }, { value: 4, text: '4' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Negatív: 0-1' }, { dot: 'bg-orange-500', text: 'Pozitív: ≥ 2' }]
+            },
+            sofa: {
+                min: 0, max: 24, rangeLabel: '0-24', badgeClass: 'text-slate-700',
+                normalRange: { from: 0, to: 1.99 },
+                normalBandClass: 'bg-blue-200/80', normalLabelClass: 'text-blue-700',
+                segments: [{ from: 0, to: 2, color: 'bg-blue-500' }, { from: 2, to: 10, color: 'bg-orange-500' }, { from: 10, to: 24, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 2, text: '2' }, { value: 10, text: '10' }, { value: 24, text: '24' }],
+                legend: [{ dot: 'bg-blue-500', text: 'Alacsony: 0-1' }, { dot: 'bg-orange-500', text: 'Szignifikáns: 2-9' }, { dot: 'bg-red-500', text: 'Súlyos: ≥ 10' }]
+            },
+            shock: {
+                min: 0, max: 3, rangeLabel: '0-3 kritérium', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 2.99 },
+                normalBandClass: 'bg-blue-200/80', normalLabelClass: 'text-blue-700', normalLabel: 'Nem teljes',
+                segments: [{ from: 0, to: 2, color: 'bg-blue-500' }, { from: 2, to: 3, color: 'bg-orange-500' }, { from: 3, to: 3.0001, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }],
+                legend: [{ dot: 'bg-blue-500', text: 'Nem igazolt: 0-2' }, { dot: 'bg-red-500', text: 'Igazolt: 3/3' }]
+            },
+            news: {
+                min: 0, max: 20, rangeLabel: '0-20', badgeClass: 'text-amber-700',
+                normalRange: { from: 0, to: 0.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700', normalLabel: 'Stabil',
+                segments: [{ from: 0, to: 1, color: 'bg-emerald-500' }, { from: 1, to: 5, color: 'bg-amber-400' }, { from: 5, to: 7, color: 'bg-orange-500' }, { from: 7, to: 20, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 5, text: '5' }, { value: 7, text: '7' }, { value: 20, text: '20' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Stabil: 0' }, { dot: 'bg-amber-400', text: 'Alacsony: 1-4' }, { dot: 'bg-orange-500', text: 'Közepes: 5-6' }, { dot: 'bg-red-500', text: 'Magas: ≥ 7' }]
+            },
+            childPugh: {
+                min: 5, max: 15, rangeLabel: '5-15', badgeClass: 'text-indigo-700',
+                normalRange: { from: 5, to: 6 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 5, to: 6.99, color: 'bg-emerald-500' }, { from: 7, to: 9.99, color: 'bg-orange-500' }, { from: 10, to: 15, color: 'bg-red-500' }],
+                labels: [{ value: 5, text: '5' }, { value: 7, text: '7' }, { value: 10, text: '10' }, { value: 15, text: '15' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Class A: 5-6' }, { dot: 'bg-orange-500', text: 'Class B: 7-9' }, { dot: 'bg-red-500', text: 'Class C: 10-15' }]
+            },
+            fib4: {
+                min: 0, max: 5, rangeLabel: '0-5', badgeClass: 'text-cyan-700',
+                normalRange: { from: 0, to: 1.45 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 1.45, color: 'bg-emerald-500' }, { from: 1.45, to: 3.25, color: 'bg-amber-400' }, { from: 3.25, to: 5, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1.45, text: '1.45' }, { value: 3.25, text: '3.25' }, { value: 5, text: '5' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: < 1.45' }, { dot: 'bg-amber-400', text: 'Indeterminált: 1.45-3.25' }, { dot: 'bg-red-500', text: 'Magas: > 3.25' }]
+            },
+            apri: {
+                min: 0, max: 3, rangeLabel: '0-3', badgeClass: 'text-teal-700',
+                normalRange: { from: 0, to: 0.5 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 0.5, color: 'bg-emerald-500' }, { from: 0.5, to: 1.5, color: 'bg-amber-400' }, { from: 1.5, to: 3, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 0.5, text: '0.5' }, { value: 1.5, text: '1.5' }, { value: 3, text: '3' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: < 0.5' }, { dot: 'bg-amber-400', text: 'Köztes: 0.5-1.5' }, { dot: 'bg-red-500', text: 'Magas: > 1.5' }]
+            },
+            nafldi: {
+                min: 30, max: 55, rangeLabel: '30-55', badgeClass: 'text-violet-700',
+                normalRange: { from: 30, to: 35.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 30, to: 36, color: 'bg-emerald-500' }, { from: 36, to: 40, color: 'bg-amber-400' }, { from: 40, to: 45, color: 'bg-orange-500' }, { from: 45, to: 55, color: 'bg-red-500' }],
+                labels: [{ value: 30, text: '30' }, { value: 36, text: '36' }, { value: 40, text: '40' }, { value: 45, text: '45' }, { value: 55, text: '55' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Normál: < 36' }, { dot: 'bg-amber-400', text: 'Grade I' }, { dot: 'bg-orange-500', text: 'Grade II' }, { dot: 'bg-red-500', text: 'Grade III-IV' }]
+            },
+            meld: {
+                min: 6, max: 40, rangeLabel: '6-40', badgeClass: 'text-rose-700',
+                normalRange: { from: 6, to: 9 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 6, to: 9.99, color: 'bg-emerald-500' }, { from: 10, to: 19.99, color: 'bg-amber-400' }, { from: 20, to: 29.99, color: 'bg-orange-500' }, { from: 30, to: 40, color: 'bg-red-500' }],
+                labels: [{ value: 6, text: '6' }, { value: 10, text: '10' }, { value: 20, text: '20' }, { value: 30, text: '30' }, { value: 40, text: '40' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: ≤ 9' }, { dot: 'bg-amber-400', text: 'Közepes: 10-19' }, { dot: 'bg-orange-500', text: 'Magas: 20-29' }, { dot: 'bg-red-500', text: 'Nagyon magas: ≥ 30' }]
+            },
+            egfr: {
+                min: 0, max: 120, rangeLabel: '0-120', badgeClass: 'text-lime-700',
+                normalRange: { from: 90, to: 120 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 15, color: 'bg-red-700' }, { from: 15, to: 30, color: 'bg-red-500' }, { from: 30, to: 45, color: 'bg-orange-500' }, { from: 45, to: 60, color: 'bg-yellow-500' }, { from: 60, to: 90, color: 'bg-lime-500' }, { from: 90, to: 120, color: 'bg-emerald-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 15, text: '15' }, { value: 30, text: '30' }, { value: 60, text: '60' }, { value: 90, text: '90' }, { value: 120, text: '120' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Normál: ≥ 90' }, { dot: 'bg-lime-500', text: 'G2: 60-89' }, { dot: 'bg-orange-500', text: 'G3: 30-59' }, { dot: 'bg-red-500', text: 'G4-G5: < 30' }]
+            },
+            curb65: {
+                min: 0, max: 5, rangeLabel: '0-5', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 1 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 3, color: 'bg-orange-500' }, { from: 3, to: 5, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }, { value: 5, text: '5' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: 0-1' }, { dot: 'bg-orange-500', text: 'Közepes: 2' }, { dot: 'bg-red-500', text: 'Magas: ≥ 3' }]
+            },
+            cdai: {
+                min: 0, max: 500, rangeLabel: '0-500', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 149 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700', normalLabel: 'Remisszió',
+                segments: [{ from: 0, to: 150, color: 'bg-emerald-500' }, { from: 150, to: 220, color: 'bg-amber-400' }, { from: 220, to: 450, color: 'bg-orange-500' }, { from: 450, to: 500, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 150, text: '150' }, { value: 220, text: '220' }, { value: 450, text: '450' }, { value: 500, text: '500' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Remisszió: < 150' }, { dot: 'bg-amber-400', text: 'Enyhe-közepes' }, { dot: 'bg-orange-500', text: 'Közepes-súlyos' }, { dot: 'bg-red-500', text: 'Súlyos: > 450' }]
+            },
+            mayo: {
+                min: 0, max: 12, rangeLabel: '0-12', badgeClass: 'text-amber-700',
+                normalRange: { from: 0, to: 2 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700', normalLabel: 'Remisszió',
+                segments: [{ from: 0, to: 3, color: 'bg-emerald-500' }, { from: 3, to: 6, color: 'bg-amber-400' }, { from: 6, to: 11, color: 'bg-orange-500' }, { from: 11, to: 12, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 3, text: '3' }, { value: 6, text: '6' }, { value: 11, text: '11' }, { value: 12, text: '12' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Remisszió: 0-2' }, { dot: 'bg-amber-400', text: 'Enyhe: 3-5' }, { dot: 'bg-orange-500', text: 'Közepes: 6-10' }, { dot: 'bg-red-500', text: 'Súlyos: 11-12' }]
+            },
+            cha2: {
+                min: 0, max: 9, rangeLabel: '0-9', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 1 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 3, color: 'bg-orange-500' }, { from: 3, to: 9, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }, { value: 9, text: '9' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: 0-1' }, { dot: 'bg-orange-500', text: 'Köztes' }, { dot: 'bg-red-500', text: 'Magasabb' }]
+            },
+            hasbled: {
+                min: 0, max: 9, rangeLabel: '0-9', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 1 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 3, color: 'bg-orange-500' }, { from: 3, to: 9, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }, { value: 9, text: '9' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: 0-1' }, { dot: 'bg-orange-500', text: 'Köztes: 2' }, { dot: 'bg-red-500', text: 'Magas: ≥ 3' }]
+            },
+            heart: {
+                min: 0, max: 10, rangeLabel: '0-10', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 3 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 4, color: 'bg-emerald-500' }, { from: 4, to: 7, color: 'bg-orange-500' }, { from: 7, to: 10, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 3, text: '3' }, { value: 4, text: '4' }, { value: 7, text: '7' }, { value: 10, text: '10' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: 0-3' }, { dot: 'bg-orange-500', text: 'Köztes: 4-6' }, { dot: 'bg-red-500', text: 'Magas: 7-10' }]
+            },
+            grace: {
+                min: 0, max: 220, rangeLabel: '0-220', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 108 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 109, color: 'bg-emerald-500' }, { from: 109, to: 141, color: 'bg-orange-500' }, { from: 141, to: 220, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 109, text: '109' }, { value: 141, text: '141' }, { value: 220, text: '220' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: < 109' }, { dot: 'bg-orange-500', text: 'Köztes: 109-140' }, { dot: 'bg-red-500', text: 'Magas: > 140' }]
+            },
+            timi: {
+                min: 0, max: 7, rangeLabel: '0-7', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 2 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 3, color: 'bg-emerald-500' }, { from: 3, to: 6, color: 'bg-orange-500' }, { from: 6, to: 7, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 2, text: '2' }, { value: 3, text: '3' }, { value: 6, text: '6' }, { value: 7, text: '7' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsony: 0-2' }, { dot: 'bg-orange-500', text: 'Köztes: 3-5' }, { dot: 'bg-red-500', text: 'Magas: 6-7' }]
+            },
+            bmi: {
+                min: 15, max: 45, rangeLabel: '15-45 kg/m²', badgeClass: 'text-slate-700',
+                normalRange: { from: 18.5, to: 24.9 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 15, to: 18.5, color: 'bg-blue-500' }, { from: 18.5, to: 25, color: 'bg-emerald-500' }, { from: 25, to: 30, color: 'bg-amber-400' }, { from: 30, to: 35, color: 'bg-orange-500' }, { from: 35, to: 45, color: 'bg-red-500' }],
+                labels: [{ value: 15, text: '15' }, { value: 18.5, text: '18.5' }, { value: 25, text: '25' }, { value: 30, text: '30' }, { value: 35, text: '35' }, { value: 45, text: '45' }],
+                legend: [{ dot: 'bg-blue-500', text: 'Soványság' }, { dot: 'bg-emerald-500', text: 'Normál: 18.5-24.9' }, { dot: 'bg-amber-400', text: 'Túlsúly' }, { dot: 'bg-red-500', text: 'Obezitás' }]
+            },
+            bri: {
+                min: 2, max: 10, rangeLabel: '2-10', badgeClass: 'text-slate-700',
+                normalRange: { from: 3.41, to: 5.45 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 2, to: 3.41, color: 'bg-blue-500' }, { from: 3.41, to: 5.46, color: 'bg-emerald-500' }, { from: 5.46, to: 6.91, color: 'bg-amber-400' }, { from: 6.91, to: 10, color: 'bg-red-500' }],
+                labels: [{ value: 2, text: '2' }, { value: 3.41, text: '3.41' }, { value: 5.46, text: '5.46' }, { value: 6.91, text: '6.91' }, { value: 10, text: '10' }],
+                legend: [{ dot: 'bg-blue-500', text: 'Alacsonyabb' }, { dot: 'bg-emerald-500', text: 'Referencia' }, { dot: 'bg-amber-400', text: 'Emelkedett' }, { dot: 'bg-red-500', text: 'Magas' }]
+            },
+            safe: {
+                min: -100, max: 200, rangeLabel: '-100-200', badgeClass: 'text-slate-700',
+                normalRange: { from: -100, to: -1 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: -100, to: 0, color: 'bg-emerald-500' }, { from: 0, to: 100, color: 'bg-orange-500' }, { from: 100, to: 200, color: 'bg-red-500' }],
+                labels: [{ value: -100, text: '-100' }, { value: 0, text: '0' }, { value: 100, text: '100' }, { value: 200, text: '200' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Low risk: < 0' }, { dot: 'bg-orange-500', text: 'Intermediate: 0-99' }, { dot: 'bg-red-500', text: 'High: ≥ 100' }]
+            },
+            stroke: {
+                min: 0, max: 7, rangeLabel: '0-7', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 1.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2, color: 'bg-emerald-500' }, { from: 2, to: 4, color: 'bg-orange-500' }, { from: 4, to: 7, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 2, text: '2' }, { value: 4, text: '4' }, { value: 7, text: '7' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Low: 0-1' }, { dot: 'bg-orange-500', text: 'Moderate: 2-3' }, { dot: 'bg-red-500', text: 'High: ≥ 4' }]
+            },
+            psi: {
+                min: 0, max: 180, rangeLabel: '0-180', badgeClass: 'text-red-700',
+                normalRange: { from: 0, to: 70 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 71, color: 'bg-emerald-500' }, { from: 71, to: 91, color: 'bg-amber-400' }, { from: 91, to: 131, color: 'bg-orange-500' }, { from: 131, to: 180, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 70, text: '70' }, { value: 90, text: '90' }, { value: 130, text: '130' }, { value: 180, text: '180' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Class I-II' }, { dot: 'bg-amber-400', text: 'Class III' }, { dot: 'bg-orange-500', text: 'Class IV' }, { dot: 'bg-red-500', text: 'Class V' }]
+            },
+            homa: {
+                min: 0, max: 5, rangeLabel: '0-5', badgeClass: 'text-orange-700',
+                normalRange: { from: 0, to: 2.0 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 2.0, color: 'bg-emerald-500' }, { from: 2.0, to: 2.5, color: 'bg-amber-400' }, { from: 2.5, to: 5, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 2, text: '2.0' }, { value: 2.5, text: '2.5' }, { value: 5, text: '5' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Normál: ≤ 2.0' }, { dot: 'bg-amber-400', text: 'Határérték' }, { dot: 'bg-red-500', text: 'IR: > 2.5' }]
+            },
+            quicki: {
+                min: 0.30, max: 0.45, rangeLabel: '0.30-0.45', badgeClass: 'text-orange-700',
+                normalRange: { from: 0.35, to: 0.45 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0.30, to: 0.339, color: 'bg-red-500' }, { from: 0.339, to: 0.35, color: 'bg-amber-400' }, { from: 0.35, to: 0.45, color: 'bg-emerald-500' }],
+                labels: [{ value: 0.30, text: '0.30' }, { value: 0.339, text: '0.339' }, { value: 0.35, text: '0.35' }, { value: 0.45, text: '0.45' }],
+                legend: [{ dot: 'bg-red-500', text: 'Csökkent: < 0.339' }, { dot: 'bg-amber-400', text: 'Határérték' }, { dot: 'bg-emerald-500', text: 'Normál: ≥ 0.35' }]
+            },
+            lipidOverall: {
+                min: 0, max: 3, rangeLabel: '0-3', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 0.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 1, color: 'bg-emerald-500' }, { from: 1, to: 2, color: 'bg-amber-400' }, { from: 2, to: 3, color: 'bg-orange-500' }, { from: 3, to: 3.0001, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 1, text: '1' }, { value: 2, text: '2' }, { value: 3, text: '3' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Kedvező' }, { dot: 'bg-amber-400', text: 'Határérték közeli' }, { dot: 'bg-orange-500', text: 'Emelkedett' }, { dot: 'bg-red-500', text: 'Nagyon magas' }]
+            },
+            fli: {
+                min: 0, max: 100, rangeLabel: '0-100', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 29 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 30, color: 'bg-emerald-500' }, { from: 30, to: 60, color: 'bg-amber-400' }, { from: 60, to: 100, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 30, text: '30' }, { value: 60, text: '60' }, { value: 100, text: '100' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Kizáró: < 30' }, { dot: 'bg-amber-400', text: 'Köztes: 30-59' }, { dot: 'bg-red-500', text: 'Valószínű: ≥ 60' }]
+            },
+            atlas: {
+                min: 0, max: 10, rangeLabel: '0-10', badgeClass: 'text-emerald-700',
+                normalRange: { from: 0, to: 3.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 0, to: 4, color: 'bg-emerald-500' }, { from: 4, to: 8, color: 'bg-amber-400' }, { from: 8, to: 10, color: 'bg-red-500' }],
+                labels: [{ value: 0, text: '0' }, { value: 4, text: '4' }, { value: 8, text: '8' }, { value: 10, text: '10' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Alacsonyabb' }, { dot: 'bg-amber-400', text: 'Köztes' }, { dot: 'bg-red-500', text: 'Magas' }]
+            },
+            eag: {
+                min: 4, max: 15, rangeLabel: '4-15 mmol/L', badgeClass: 'text-red-700',
+                normalRange: { from: 4, to: 6.99 },
+                normalBandClass: 'bg-emerald-200/80', normalLabelClass: 'text-emerald-700',
+                segments: [{ from: 4, to: 7, color: 'bg-emerald-500' }, { from: 7, to: 10, color: 'bg-amber-400' }, { from: 10, to: 15, color: 'bg-red-500' }],
+                labels: [{ value: 4, text: '4' }, { value: 7, text: '7' }, { value: 10, text: '10' }, { value: 15, text: '15' }],
+                legend: [{ dot: 'bg-emerald-500', text: 'Kedvezőbb' }, { dot: 'bg-amber-400', text: 'Köztes' }, { dot: 'bg-red-500', text: 'Emelkedett' }]
+            }
+        };
+
+        function renderTyGGauge(value) {
+            return createRiskGauge({
+                value,
+                min: 7.2,
+                max: 9.4,
+                rangeLabel: '7.2-9.4',
+                valueLabel: value.toFixed(2),
+                badgeClass: 'text-sky-700',
+                normalRange: { from: 7.2, to: 8.0 },
+                normalBandClass: 'bg-emerald-200/80',
+                normalLabelClass: 'text-emerald-700',
+                segments: [
+                    { from: 7.2, to: 8.0, color: 'bg-emerald-500' },
+                    { from: 8.0, to: 8.4, color: 'bg-amber-400' },
+                    { from: 8.4, to: 8.8, color: 'bg-orange-500' },
+                    { from: 8.8, to: 9.4, color: 'bg-red-500' }
+                ],
+                labels: [
+                    { value: 7.2, text: '7.2' },
+                    { value: 8.0, text: '8.0' },
+                    { value: 8.4, text: '8.4' },
+                    { value: 8.8, text: '8.8' },
+                    { value: 9.4, text: '9.4' }
+                ],
+                legend: [
+                    { dot: 'bg-emerald-500', text: 'Normális / alacsonyabb: < 8.0' },
+                    { dot: 'bg-amber-400', text: 'Köztes: 8.0-8.39' },
+                    { dot: 'bg-orange-500', text: 'Emelkedett: 8.4-8.79' },
+                    { dot: 'bg-red-500', text: 'Magas: >= 8.8' }
+                ]
+            });
+        }
         function calculateMETSIRBMI() {
             const weight = parseFloat(document.getElementById('metsir-bmi-weight').value);
             const heightCm = parseFloat(document.getElementById('metsir-bmi-height').value);
@@ -3862,6 +4310,7 @@
                 <div class="text-4xl font-black ${valueClass}">${fli.toFixed(1)}</div>
                 <div class="text-sm mt-1 font-medium ${valueClass}">${label}</div>
                 <div class="text-xs text-gray-600 mt-3">${note}</div>
+                ${renderGaugeFromConfig(gaugePresets.fli, fli, fli.toFixed(1))}
             `;
         }
 
@@ -3933,6 +4382,7 @@
                 <div class="text-4xl font-black ${valueClass}">${score}</div>
                 <div class="text-sm mt-1 font-medium ${valueClass}">${label}</div>
                 <div class="text-xs text-gray-600 mt-3">${note}</div>
+                ${renderGaugeFromConfig(gaugePresets.atlas, score, `${score}`)}
             `;
         }
 
@@ -3958,6 +4408,7 @@
                 <div class="text-sm text-gray-500 font-bold uppercase mb-1">Becsült átlagos vércukor (eAG)</div>
                 <div class="text-4xl font-black text-red-700">${eag.toFixed(1)} <span class="text-lg">mmol/L</span></div>
                 <div class="text-xs text-gray-500 mt-3">${note}</div>
+                ${renderGaugeFromConfig(gaugePresets.eag, eag, `${eag.toFixed(1)} mmol/L`)}
             `;
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-red-100 text-center";
         }
@@ -3966,3 +4417,6 @@
     </script>
 </body>
 </html>
+
+
+
