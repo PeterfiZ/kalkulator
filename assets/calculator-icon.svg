@@ -1,0 +1,54 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" role="img" aria-label="Calculator icon">
+  <defs>
+    <linearGradient id="bg" x1="160" y1="160" x2="864" y2="864" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#0f172a"/>
+      <stop offset="1" stop-color="#0b4b6f"/>
+    </linearGradient>
+    <linearGradient id="panel" x1="240" y1="240" x2="784" y2="784" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#1e293b"/>
+      <stop offset="1" stop-color="#0f172a"/>
+    </linearGradient>
+    <linearGradient id="screen" x1="320" y1="200" x2="704" y2="416" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#dbeafe"/>
+      <stop offset="1" stop-color="#93c5fd"/>
+    </linearGradient>
+  </defs>
+  <rect x="72" y="72" width="880" height="880" rx="212" fill="url(#bg)"/>
+  <rect x="122" y="122" width="780" height="780" rx="170" fill="none" stroke="rgba(255,255,255,0.18)" stroke-width="10"/>
+  <path d="M192 192h640c26 0 48 22 48 48v544c0 26-22 48-48 48H192c-26 0-48-22-48-48V240c0-26 22-48 48-48Z" fill="url(#panel)"/>
+  <rect x="192" y="192" width="640" height="160" rx="48" fill="#0b1220"/>
+  <rect x="236" y="236" width="552" height="72" rx="28" fill="url(#screen)"/>
+  <circle cx="284" cy="268" r="14" fill="#ffffff" opacity="0.9"/>
+  <rect x="240" y="398" width="116" height="84" rx="28" fill="#38bdf8"/>
+  <rect x="386" y="398" width="116" height="84" rx="28" fill="#1e293b"/>
+  <rect x="532" y="398" width="116" height="84" rx="28" fill="#1e293b"/>
+  <rect x="678" y="398" width="116" height="84" rx="28" fill="#f59e0b"/>
+  <rect x="240" y="510" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="386" y="510" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="532" y="510" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="678" y="510" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="240" y="622" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="386" y="622" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="532" y="622" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="678" y="622" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="240" y="734" width="262" height="84" rx="28" fill="#0ea5e9"/>
+  <rect x="532" y="734" width="116" height="84" rx="28" fill="#334155"/>
+  <rect x="678" y="734" width="116" height="84" rx="28" fill="#22c55e"/>
+  <g fill="#f8fafc" font-family="Inter, Arial, sans-serif" font-weight="700" text-anchor="middle">
+    <text x="298" y="455" font-size="58">1</text>
+    <text x="444" y="455" font-size="58">2</text>
+    <text x="590" y="455" font-size="58">3</text>
+    <text x="736" y="455" font-size="58">+</text>
+    <text x="298" y="567" font-size="58">4</text>
+    <text x="444" y="567" font-size="58">5</text>
+    <text x="590" y="567" font-size="58">6</text>
+    <text x="736" y="567" font-size="58">−</text>
+    <text x="298" y="679" font-size="58">7</text>
+    <text x="444" y="679" font-size="58">8</text>
+    <text x="590" y="679" font-size="58">9</text>
+    <text x="736" y="679" font-size="58">×</text>
+    <text x="371" y="791" font-size="58">0</text>
+    <text x="590" y="791" font-size="58">.</text>
+    <text x="736" y="791" font-size="58">=</text>
+  </g>
+</svg>

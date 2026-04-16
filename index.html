@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sepsis Kalkulátor Gyűjtemény</title>
+    <meta name="theme-color" content="#0f172a">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="manifest" href="manifest.webmanifest">
+    <link rel="icon" type="image/x-icon" href="assets/app-icon.ico">
+    <link rel="icon" type="image/svg+xml" href="assets/calculator-icon.svg">
+    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -44,6 +53,12 @@
                         <span class="rounded-2xl border border-white/15 bg-white/10 px-4 py-2">32 klinikai eszköz</span>
                         <span class="rounded-2xl border border-white/15 bg-white/10 px-4 py-2">Rövid értelmezés minden eredményhez</span>
                         <span class="rounded-2xl border border-white/15 bg-white/10 px-4 py-2">Mobilon is kényelmesen használható</span>
+                    </div>
+                    <div class="mt-6 flex flex-wrap items-center gap-3">
+                        <button id="install-pwa-btn" class="hidden rounded-full bg-emerald-500 px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-emerald-500/20 transition hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-emerald-300">
+                            App telepítése
+                        </button>
+                        <span id="install-pwa-note" class="text-sm text-slate-300">Telepíthető appként is használható, ha a böngésző támogatja.</span>
                     </div>
                 </div>
                 <div class="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
@@ -4413,6 +4428,42 @@
             resDiv.className = "mt-8 p-6 bg-white rounded-xl border-2 border-red-100 text-center";
         }
         document.getElementById('hba1c-val').addEventListener('input', calculateHbA1c);
+
+        // PWA telepítés + service worker
+        let deferredInstallPrompt = null;
+        const installButton = document.getElementById('install-pwa-btn');
+        const installNote = document.getElementById('install-pwa-note');
+
+        window.addEventListener('beforeinstallprompt', (event) => {
+            event.preventDefault();
+            deferredInstallPrompt = event;
+            installButton.classList.remove('hidden');
+            installNote.textContent = 'A böngésző felkínálta a telepítést.';
+        });
+
+        installButton.addEventListener('click', async () => {
+            if (!deferredInstallPrompt) return;
+            deferredInstallPrompt.prompt();
+            const choice = await deferredInstallPrompt.userChoice;
+            deferredInstallPrompt = null;
+            installButton.classList.add('hidden');
+            installNote.textContent = choice.outcome === 'accepted'
+                ? 'Az app telepítése elindult.'
+                : 'A telepítés most nem történt meg.';
+        });
+
+        window.addEventListener('appinstalled', () => {
+            installButton.classList.add('hidden');
+            installNote.textContent = 'Az app telepítve van.';
+        });
+
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js').catch(() => {
+                    installNote.textContent = 'A service worker regisztráció nem sikerült, de az oldal továbbra is használható.';
+                });
+            });
+        }
 
     </script>
 </body>
